@@ -1,5 +1,6 @@
 import sqlite3
 from Review import Review
+from util import calcCosSim
 
 
 class Recommender:
@@ -10,8 +11,8 @@ class Recommender:
         self.books = set()
         self.users = set()
         self.importReviews()
-        for review in self.reviews:
-            print(review)
+        self.books = list(self.books)
+        self.users = list(self.users)
 
     def importReviews(self):
         with sqlite3.connect(self.revDB) as connection:
@@ -22,8 +23,32 @@ class Recommender:
                 self.books.add(row[1])
                 self.users.add(row[2])
 
-    def getBFFs(self, user, friendCount=2):
-        pass
+    def getReviewsByUser(self, user):
+        reviews = {}
+        for book in self.books:
+            reviews[book] = 0
+
+        for review in self.reviews:
+            if review.reviewer == user:
+                reviews[review.bookTitle] = review.rating
+
+        return reviews
+
+    def getSimilarUsers(self, targetUser, friendCount=2):
+        similarity = {}
+        targetReviews = self.getReviewsByUser(targetUser)
+        for user in self.users:
+            if user != targetUser:
+                x = []
+                y = []
+                userReviews = self.getReviewsByUser(user)
+                for key in targetReviews.keys():
+                    x.append(targetReviews[key])
+                    y.append(userReviews[key])
+                similarity[user] = calcCosSim(x, y)
+        print(f"User similarity to {targetUser}")
+        for user in similarity.keys():
+            print(f"{user}: {similarity[user]}")
 
     def getUnreadBooks(self, user):
         unreadBooks = list(self.books)
@@ -33,9 +58,6 @@ class Recommender:
         return unreadBooks
 
     def getRecommendations(self, user):
-        pass
-
-    def getReviewCount(self, bookTitle):
         pass
 
     def clearDBRows(self):
@@ -54,7 +76,8 @@ class Recommender:
 
 def main():
     recommender = Recommender()
-    print(recommender.getUnreadBooks("Michelle"))
+
+    recommender.getSimilarUsers("Slater")
 
 
 if __name__ == "__main__":
