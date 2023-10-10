@@ -1,6 +1,7 @@
 import sqlite3
 from Review import Review
 from util import calcCosSim
+from Recommendation import Recommendation
 
 
 class Recommender:
@@ -77,7 +78,10 @@ class Recommender:
         similarUser = self.getSimilarUsers(user)
         similarUserReviews = self.getReviewsByUser(similarUser)
         books = self.getBooksFromSimilarUser(user, similarUserReviews)
-        return books
+        recommendations = []
+        for book in books:
+            recommendations.append(Recommendation(user, book, 0))
+        return recommendations
 
     def clearDBRows(self):
         with sqlite3.connect(self.recDB) as connection:
@@ -89,14 +93,23 @@ class Recommender:
         recommendations = []
         for user in self.users:
             recommendations.extend(self.getRecommendations(user))
+
+        for rec in recommendations:
+            self.storeRecommendation(rec)
+
+    def storeRecommendation(self, rec):
         with sqlite3.connect(self.recDB) as connection:
             cursor = connection.cursor()
+            sql = """INSERT INTO recommendations (user, book, priority)
+            VALUES(?,?,?)"""
+            params = (rec.user, rec.bookTitle, rec.priority)
+            cursor.execute(sql, params)
+            connection.commit()
 
 
 def main():
     recommender = Recommender()
-
-    print(recommender.getRecommendations("Slater"))
+    recommender.storeRecommendations()
 
 
 if __name__ == "__main__":
