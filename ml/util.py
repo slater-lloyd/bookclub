@@ -24,7 +24,6 @@ def calcCosSim(x, y):
     magx = calcMagnitude(x)
     magy = calcMagnitude(y)
     cos = dot / (magx*magy)
-    print(f"Dot: {dot}\nMag (x,y): {magx},{magy}\nCos: {cos}")
     return cos
 
 

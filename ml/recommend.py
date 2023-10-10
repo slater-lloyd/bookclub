@@ -46,9 +46,13 @@ class Recommender:
                     x.append(targetReviews[key])
                     y.append(userReviews[key])
                 similarity[user] = calcCosSim(x, y)
-        print(f"User similarity to {targetUser}")
+        similarUser = ""
+        similarityScore = 0
         for user in similarity.keys():
-            print(f"{user}: {similarity[user]}")
+            if similarity[user] > similarityScore:
+                similarUser = user
+                similarityScore = similarity[user]
+        return similarUser
 
     def getUnreadBooks(self, user):
         unreadBooks = list(self.books)
@@ -57,8 +61,23 @@ class Recommender:
                 unreadBooks.remove(review.bookTitle)
         return unreadBooks
 
+    def getBooksFromSimilarUser(self, user, reviewsBySimilarUser):
+        recommendations = []
+        topBooks = []
+        for review in reviewsBySimilarUser.keys():
+            if reviewsBySimilarUser[review] > 3:
+                topBooks.append(review)
+        unread = self.getUnreadBooks(user)
+        for rec in topBooks:
+            if rec in unread:
+                recommendations.append(rec)
+        return recommendations
+
     def getRecommendations(self, user):
-        pass
+        similarUser = self.getSimilarUsers(user)
+        similarUserReviews = self.getReviewsByUser(similarUser)
+        books = self.getBooksFromSimilarUser(user, similarUserReviews)
+        return books
 
     def clearDBRows(self):
         with sqlite3.connect(self.recDB) as connection:
@@ -77,7 +96,7 @@ class Recommender:
 def main():
     recommender = Recommender()
 
-    recommender.getSimilarUsers("Slater")
+    print(recommender.getRecommendations("Slater"))
 
 
 if __name__ == "__main__":
